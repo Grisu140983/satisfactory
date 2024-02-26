@@ -1,7 +1,7 @@
 {
 Eisenplatte = 195,
 Eisenstange = 196,
-Verstärkte Eisenplatte = 207,
+VerstärkteEisenplatte = 207,
 Kabel = 208,
 Draht = 209,
 Motor = 223,
