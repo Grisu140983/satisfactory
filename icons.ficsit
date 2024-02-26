@@ -1,6 +1,7 @@
 {
 Eisenplatte = 195,
 Eisenstange = 196,
-Motor = 223
+Motor = 223,
+Verstärkte Eisenplatte = 207
 }
 
