@@ -33,7 +33,7 @@ function round(number, decimals)
 end
 
 function initScreen()
-	monitor = component.proxy(component.findComponent("monitor"))
+	monitor = component.proxy(component.findComponent("monitor"))[1]
 
 	-- init gpu and screen
 	local gpu = computer.getPCIDevices(classes.GPU_T1_C)[1]
