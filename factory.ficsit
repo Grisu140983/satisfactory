@@ -33,7 +33,7 @@ function round(number, decimals)
 end
 
 function initScreen()
-	monitor = component.proxy("DB0657B4496AD20D5C984ABDB7936E08")
+	monitor = component.proxy("D772764B41A527F073044A8398614FEC")
 
 	-- init gpu and screen
 	local gpu = computer.getPCIDevices(classes.GPU_T1_C)[1]
@@ -87,8 +87,21 @@ function setMonitorData(gpu)
 	
 	machines = component.proxy(component.findComponent("factory_machine"))
 		
-   	slots = 2
-   			
+	local maschinentyp = machines[1]:getType()
+		
+	if component.proxy(component.findComponent(classes.Build_ConstructorMk1_C)[1]) ~= nil then
+    	slots = 1
+    	mName = "Konstruktor"
+	elseif component.proxy(component.findComponent(classes.Build_AssemblerMk1_C)[1]) ~= nil then
+    	slots = 2
+    	mName = "Fabrikator"
+	elseif component.proxy(component.findComponent(classes.Manufacturer)[1]) ~= nil then
+    	slots = 4
+    	mName = "Manufaktor"
+	else
+    	slots = 0
+	end
+		
 	recipe = machines[1]:getRecipe().name
 	newrecipe = string.gsub(recipe, "%s", "")
 	iconNr = icons[newrecipe]
@@ -171,9 +184,10 @@ function setMonitorData(gpu)
 	gpu:setText(1,3, "Rohstoffe:")
 	for itemSlot = 1, slots do
 		gpu:setText(20,3, machines[1]:getRecipe():getIngredients()[itemSlot].type.name )
-	end	
-	gpu:setText(15,3, 60 / machines[1].cycleTime * (machines[1]:getRecipe():getIngredients()[1].amount) * sumMachines)	
-	gpu:setText(15,4, 60 / machines[1].cycleTime * (machines[1]:getRecipe():getIngredients()[1].amount) * sumMachines )	
+	end
+	for itemSlot = 1, slots do
+		gpu:setText(15,2+itemSlot, round(60 / machines[1].cycleTime * (machines[1]:getRecipe():getIngredients()[itemSlot].amount) * sumMachines, 0))	
+	end
 	
 	clock = round((potential*100),0)
 	
