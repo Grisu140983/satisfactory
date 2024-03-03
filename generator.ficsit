@@ -1,0 +1,174 @@
+refineryData = component.proxy(component.findComponent(classes.Build_OilRefinery_C))
+baseClock = refineryData[1].potential
+
+verbrauchGesamt = 0
+
+function getFuelEnergy()
+    storageTanks = component.proxy(component.findComponent(classes.Build_IndustrialTank_C))
+    energy = storageTanks[1]:getFluidType().energy
+  	return(energy)
+end
+
+function initScreen(monitor,part)
+	monitor = component.proxy(component.findComponent(monitor))[1]
+
+	-- init gpu and screen
+	local gpu = computer.getPCIDevices(classes.GPU_T1_C)[part]
+	
+	gpu:setSize(200,40)
+	displayw,displayh = gpu:getsize()
+
+   	-- bind display to gpu 
+   	gpu:bindscreen(monitor)
+   	return gpu
+end
+
+
+function round(number, decimals)
+    decimals = decimals or 0
+    local shift = 10 ^ decimals
+    local rounded = math.floor(number * shift + 0.5) / shift
+    if decimals == 0 then
+        return math.floor(rounded)
+    else
+        return rounded
+    end
+end
+
+function loadingbar(value)
+	string = ""
+	for i = 0, value do
+	
+		string = string .."░"
+	end
+	return string
+end
+
+function levelClock(eff, clk, sum, max)
+
+    if eff < 1 then
+        clk = clk - 0.000025
+    elseif sum > max then
+    	clk = clk - 0.0001
+    elseif sum < max then
+        clk = clk + 0.0001
+    end
+    
+    return clk
+end
+
+function refineryScreen(gpu)
+
+    local sumFuel = 0
+    local sumMachines = 0
+    local sumProductivity = 0
+    
+    refineries = component.proxy(component.findComponent(classes.Build_OilRefinery_C))
+	
+	gpu:setBackground(0,0,0,0)
+	gpu:fill(0,0,displayw,displayh," ")
+	displayw,displayh = gpu:getsize()
+	gpu:setForeGround(1,1,1,1)
+	gpu:setText(1,1,"Factory Manager")
+		
+	gpu:setText(1,2,"Basistakt: ".. round(baseClock*100,1) .."%")
+	
+	rowL = 0
+	rowR = 0
+	col = 0
+	
+	for i in pairs (refineries) do
+		refinery = refineries[i]
+		
+		if refinery.standby ~= true then
+				
+		if refinery:getRecipe().name ~= "Resttreibstoff" then
+			refinery.potential = baseClock
+			rowR = rowR + 1
+			row = rowR
+			col = 0
+		else
+			rowL = rowL + 1
+			row = rowL
+			col = 50
+		end
+				
+		output = round (( 60 / refinery.cycleTime * 4 * refinery.productivity ),1)
+		sumMachines = sumMachines +1
+		sumProductivity = sumProductivity + refinery.productivity
+		sumFuel = sumFuel + output	
+		
+		gap = 6
+		
+		gpu:setText(1+col ,gap-2,"Produktion: " .. refinery:getRecipe().name)	
+		gpu:setText(1+col ,gap+row,row)
+		gpu:setText(6+col,gap+row, loadingbar(refinery.progress*20))
+		gpu:setText(28+col,gap+row, output .." /min")
+		gpu:setText(38+col,gap+row, round ( refinery.productivity*100 ,0 ).."%")
+	end
+	
+	end
+	
+	averageProductivity = sumProductivity / sumMachines
+	
+	baseClock = levelClock(averageProductivity,baseClock,sumFuel,600)
+	
+	gpu:setText(28,6+sumMachines, sumFuel .."/min")
+	gpu:setText(38,6+sumMachines, round ( averageProductivity*100 ,0 ).."%")
+	
+	
+	gpu:flush()
+end
+
+function generatorScreen(gpu)
+    generators = component.proxy(component.findComponent(classes.Build_GeneratorFuel_C))
+
+	gpu:setBackground(0,0,0,0)
+	gpu:fill(0,0,displayw,displayh," ")
+	displayw,displayh = gpu:getsize()
+	gpu:setForeGround(1,1,1,1)
+	gpu:setText(1,1,"Generator Manager")
+	
+	verbrauchGesamt = 0
+	
+	
+    local sumMachines = 0
+		    
+    for i in pairs (generators) do
+    	generator = generators[i]
+    	
+    	const = 0.04
+    	verbrauch = generator:getPowerConnectors()[1]:getPower().DynProduction * getFuelEnergy() * const		    	
+
+		sumMachines = sumMachines +1
+    	    	
+    	gpu:setText(1 ,4+i,i)
+    	gpu:setText(5 ,4+i,generator.productivity)
+    	gpu:setText(10,4+i,round(generator.potential,2))
+    	gpu:setText(25,4+i,generator:getPowerConnectors()[1]:getPower().DynProduction)
+    	gpu:setText(35,4+i,round(generator.potential,2).."%")
+    	gpu:setText(45,4+i,(round(verbrauch,1)) .. " Liter/min")
+    	gpu:setText(60,4+i,(round(60/verbrauch,2)) .. " Sek")
+    	
+    	verbrauchGesamt = verbrauchGesamt + verbrauch
+    	
+    	-- print("Pot: ".. pot .. " Quot: " .. test.." Fuel: "..eFuel.." Dyn: ".. Dyn )
+    	    	
+    end	
+       
+    gpu:setText(45,6+sumMachines,(round(verbrauchGesamt,0)) .. " Liter/min")
+	gpu:flush()
+end
+
+
+print("Starting ficsIT FactoryOS ...")
+gpu_left  = initScreen("screen_a",1)
+gpu_right = initScreen("screen_b",2)
+event.pull(0.75)
+print("ficsIT FactoryOS is running!")
+
+while true do
+	refineryScreen(gpu_left)
+	generatorScreen(gpu_right)
+	event.pull(0.1)
+end
