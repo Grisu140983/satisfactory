@@ -1,0 +1,25 @@
+local AUX_SCREEN = false
+local SIZE = 20
+
+local card = computer.getPCIDevices(classes.FINInternetCard)[1]
+fs = filesystem
+
+if fs.initFileSystem("/dev") == false then
+    computer.panic("Cannot initialize /dev")
+end
+
+disk_uuid = fs.childs("/dev")[1]
+
+fs.initFileSystem("/dev")
+fs.makeFileSystem("tmpfs", "tmp")
+fs.mount("/dev/"..disk_uuid,"/")
+
+local req1 = card:request("https://raw.githubusercontent.com/Grisu140983/satisfactory/main/factory.ficsit", "GET", "")
+
+local _, libdata1 = req1:await()
+local file1 = fs.open("factory.ficsit", "w")
+file1:write(libdata1)
+file1:close()
+
+fs.doFile("factory.ficsit")
+run(SIZE, false, AUX_SCREEN)
