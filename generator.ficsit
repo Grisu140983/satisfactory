@@ -87,15 +87,17 @@ function refineryScreen(gpu)
 			rowR = rowR + 1
 			row = rowR
 			col = 0
+			sumProductivity = sumProductivity + refinery.productivity
 		else
 			rowL = rowL + 1
 			row = rowL
 			col = 50
+			sumProductivity = sumProductivity + 1
 		end
 				
 		output = round (( 60 / refinery.cycleTime * 4 * refinery.productivity ),1)
 		sumMachines = sumMachines +1
-		sumProductivity = sumProductivity + refinery.productivity
+		-- sumProductivity = sumProductivity + refinery.productivity
 		sumFuel = sumFuel + output	
 		
 		gap = 6
