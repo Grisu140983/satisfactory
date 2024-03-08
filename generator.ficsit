@@ -1,5 +1,6 @@
 refineryData = component.proxy(component.findComponent(classes.Build_OilRefinery_C))
 baseClock = refineryData[1].potential
+valve = component.proxy(component.findComponent(classes.Build_Valve_C))
 
 verbrauchGesamt = 0
 
@@ -7,6 +8,16 @@ function getFuelEnergy()
     storageTanks = component.proxy(component.findComponent(classes.Build_IndustrialTank_C))
     energy = storageTanks[1]:getFluidType().energy
   	return(energy)
+end
+
+function getStoredFuel()
+    storageTanks = component.proxy(component.findComponent(classes.Build_IndustrialTank_C))
+    sumContent = 0
+    for i in pairs (storageTanks) do
+    	content = storageTanks[i].fluidContent/storageTanks[i].maxFluidContent
+    	sumContent = sumContent + ( storageTanks[i].fluidContent/storageTanks[i].maxFluidContent )
+    end
+    return sumContent
 end
 
 function initScreen(monitor,part)
@@ -102,11 +113,13 @@ function refineryScreen(gpu)
 		
 		gap = 6
 		
-		gpu:setText(1+col ,gap-2,"Produktion: " .. refinery:getRecipe().name)	
+		gpu:setText(1+col ,gap-2,"Produktion: " .. refinery:getRecipe().name)
 		gpu:setText(1+col ,gap+row,row)
 		gpu:setText(6+col,gap+row, loadingbar(refinery.progress*20))
 		gpu:setText(28+col,gap+row, output .." /min")
 		gpu:setText(38+col,gap+row, round ( refinery.productivity*100 ,0 ).."%")
+	
+					
 	end
 	
 	end
@@ -114,6 +127,19 @@ function refineryScreen(gpu)
 	averageProductivity = sumProductivity / sumMachines
 	
 	baseClock = levelClock(averageProductivity,baseClock,sumFuel,600)
+	
+	if sumFuel < 600 then
+		valve[1].userFlowLimit = 1
+	elseif sumFuel < 400 then
+		valve[1].userFlowLimit = 0.5
+	else
+		valve[1].userFlowLimit = 0
+	end
+	
+	getStoredFuel()	
+	gpu:setText(100 ,gap-2,"Tankreserven: " )
+	gpu:setText(100 ,gap  ,getStoredFuel())
+	gpu:setText(100 ,gap+1  ,"Ventil: " .. valve[1].FlowLimitPct*100 .. " %")
 	
 	gpu:setText(28,6+sumMachines, sumFuel .."/min")
 	gpu:setText(38,6+sumMachines, round ( averageProductivity*100 ,0 ).."%")
